@@ -12,7 +12,7 @@ description: >
   em outros provedores (Vercel, Netlify, AWS) nem para Docker sem relação com a
   Cloudez.
 license: MIT
-compatibility: Requer o servidor MCP "cloudez" registrado no agente, Node 20+, ssh e tar.
+compatibility: Usa o servidor MCP @cloudez/cloudez-mcp (a skill o configura no primeiro uso), Node 20+, ssh e tar.
 metadata:
   author: cloudez
   version: "0.3.0"
@@ -51,19 +51,19 @@ todas.
 ## Antes de qualquer operação
 
 1. **O MCP está presente?** Se nenhuma tool `cloudez_*` estiver disponível,
-   pare. Não tente chegar à API por outro caminho: sem o MCP, nenhuma operação
-   tem como terminar, e uma tentativa no escuro só adia a mesma resposta. Diga
-   ao usuário, em poucas linhas, que o servidor da Cloudez não está disponível
-   nesta sessão, e cubra as duas causas, porque daqui elas parecem iguais:
-   - **não registrado:** o registro está na seção de configuração do README
-     (<https://github.com/cloudezbr/cloudez-skills#configuração>);
-   - **registrado, mas não iniciou:** reconectar o servidor pelo agente ou
-     abrir uma sessão nova, e conferir que o Node é 20 ou mais novo.
+   pare a operação pedida. Não tente chegar à API por outro caminho: sem o MCP,
+   nenhuma operação tem como terminar, e uma tentativa no escuro só adia a mesma
+   resposta. Então:
+   - **o agente informou uma falha de conexão** de um servidor já registrado:
+     diga isso e oriente reconectar o servidor pelo agente ou abrir uma sessão
+     nova, conferindo que o Node é 20 ou mais novo. Não registre outro por cima;
+   - **nada indica que esteja registrado:** siga
+     [mcp-setup.md](references/mcp-setup.md), que pergunta ao usuário e
+     configura o servidor neste agente.
 
-   Se o agente informou a causa (por exemplo, uma falha de conexão), fale só
-   dela. E avise que, depois de registrar, a maioria dos agentes só carrega o
-   servidor numa sessão nova: sem esse aviso, o usuário registra, tenta de novo
-   na mesma conversa e recebe a mesma resposta.
+   Nos dois casos, a operação só continua numa sessão nova, com as tools
+   carregadas: diga isso, senão o usuário repete o pedido na mesma conversa e
+   recebe a mesma resposta.
 
    Se o MCP parar de responder **no meio** de uma operação, pare ali também e
    diga em que passo parou. No deploy, enquanto a release não foi ativada, o
@@ -86,6 +86,7 @@ entregue uma resposta só.
 
 | O usuário quer | Referência |
 | --- | --- |
+| configurar ou reinstalar o servidor MCP da Cloudez neste agente | [mcp-setup.md](references/mcp-setup.md) |
 | entrar, criar conta, trocar o token, "meu token expirou" | [login.md](references/login.md) |
 | contratar, comprar ou testar uma cloud nova | [hire-cloud.md](references/hire-cloud.md) |
 | ligar o projeto a um domínio, criar um environment, "o deploy não acha a configuração" | [setup.md](references/setup.md) |
