@@ -1,0 +1,222 @@
+#!/usr/bin/env node
+/**
+ * Uso: cloudez-login [--stdin]. --stdin lê o token de um pipe
+ * (pbpaste | cloudez-login --stdin), sem prompt e sem terminal. Sem a flag,
+ * pergunta o token e salva; exige TTY.
+ *
+ * Token é a única forma de autenticar; login por senha foi descontinuado,
+ * ver docs/mcp-tool-contract.md.
+ *
+ * O modo interativo exige TTY porque um token digitado na conversa entraria
+ * no contexto do modelo e no transcript da sessão. O --stdin existe para
+ * quem não tem terminal: o segredo vai do pipe direto ao processo, sem
+ * passar pela conversa.
+ *
+ * Este script só coleta e grava. Quem responde se o usuário está
+ * autenticado é a tool cloudez_auth_status do MCP.
+ */
+
+import { openSync } from "node:fs"
+import { ReadStream } from "node:tty"
+import { fileURLToPath } from "node:url"
+
+// Envelope de saída compartilhado com cloudez-setup.
+import { die, ok } from "./_out.mjs"
+
+/**
+ * Bundle de biblioteca, não o servidor: importar o servidor do cloudez-mcp
+ * subiria um transporte stdio e penduraria este processo. Implementa a
+ * mesma precedência de token, o mesmo Authorization: Token e a mesma
+ * tabela de vereditos que o servidor MCP usa.
+ */
+import { resolveToken, saveToken, tokenFile, tokenSource, verifyToken } from "./lib/cloudez-auth.mjs"
+
+async function statusJson(status, verified) {
+  const base = { status, source: await tokenSource(), token_file: tokenFile(), verified }
+  if (verified) return ok(base)
+  return ok({
+    ...base,
+    warning:
+      "Não foi possível confirmar o token com a API da Cloudez (offline ou API fora). " +
+      "O token foi aceito como está.",
+  })
+}
+
+/**
+ * Grava, e transforma a recusa da Cloudez em erro deste comando.
+ *
+ * `saveToken` não lança: devolve o veredito com o arquivo já restaurado.
+ * Decidir se isso é fatal é política, e fica aqui, não na biblioteca.
+ */
+async function gravarOuMorrer(token) {
+  const { verdict, restored } = await saveToken(token)
+
+  if (verdict === "invalid") {
+    die("invalid_token", "A Cloudez recusou este token.", {
+      hint:
+        "Confira se o token foi copiado inteiro e se não foi revogado no painel. " +
+        (restored ? "O token anterior foi mantido." : "Nada foi salvo."),
+    })
+  }
+
+  await statusJson("authenticated", verdict === "valid")
+}
+
+/**
+ * Espaço no meio não é token: é uma linha copiada por engano, ou o
+ * clipboard com outra coisa. Recusar evita uma chamada de API para
+ * descobrir o óbvio.
+ */
+function recusarSeNaoParecerToken(token, origem, hint) {
+  if (/\s/.test(token)) die("invalid_token", `${origem} tem espaços, não parece um token.`, { hint })
+}
+
+// As três teclas que o modo raw entrega cruas.
+const ETX = "\u0003" // Ctrl-C
+const EOT = "\u0004" // Ctrl-D, fim de entrada
+const DEL = "\u007f" // backspace, como o terminal o manda
+
+/**
+ * Lê o token do terminal, sem eco.
+ *
+ * Modo raw em vez de readline, que só esconde a digitação mexendo num
+ * método privado. O preço é tratar backspace e Ctrl-C na mão. O prompt e a
+ * moldura vão para stderr; stdout é reservado para o payload.
+ */
+function pedirToken(terminal) {
+  terminal.setRawMode(true)
+  terminal.setEncoding("utf8")
+  process.stderr.write("Token: ")
+
+  return new Promise((resolve, reject) => {
+    let buffer = ""
+
+    const encerrar = (fn, arg) => {
+      terminal.setRawMode(false)
+      terminal.pause()
+      process.stderr.write("\n")
+      fn(arg)
+    }
+
+    terminal.on("data", (chunk) => {
+      for (const ch of chunk) {
+        if (ch === "\r" || ch === "\n" || ch === EOT) return encerrar(resolve, buffer)
+        if (ch === ETX) return encerrar(reject, new Error("interrompido"))
+        if (ch === DEL || ch === "\b") buffer = buffer.slice(0, -1)
+        else buffer += ch
+      }
+    })
+  })
+}
+
+/**
+ * O terminal de controle, ou `null` se não houver.
+ *
+ * `/dev/tty` é o terminal de controle no POSIX; stdin pode estar
+ * redirecionado sem que ele tenha sumido. No Windows não existe: ali o
+ * console é o próprio stdin.
+ */
+function abrirTerminal() {
+  try {
+    return new ReadStream(openSync("/dev/tty", "r"))
+  } catch {
+    return process.platform === "win32" && process.stdin.isTTY ? process.stdin : null
+  }
+}
+
+const modo = process.argv[2] ?? ""
+
+if (modo === "--stdin") {
+  // Sem pipe isso travaria esperando entrada que nunca vem.
+  if (process.stdin.isTTY) {
+    die("usage", "--stdin espera o token num pipe, não num terminal.", {
+      hint: "Ex.: pbpaste | cloudez-login --stdin. Para digitar o token, rode cloudez-login sem argumento.",
+    })
+  }
+
+  let bruto = ""
+  process.stdin.setEncoding("utf8")
+  for await (const parte of process.stdin) bruto += parte
+  const token = bruto.replace(/[\r\n]/g, "").trim()
+
+  if (!token) {
+    die("empty_token", "Nada chegou pelo pipe. Nada foi salvo.", {
+      hint: "Se o token vinha do clipboard, confira se ele foi copiado.",
+    })
+  }
+
+  recusarSeNaoParecerToken(token, "O que chegou pelo pipe", "Copie apenas o token, sem rótulo nem URL em volta.")
+
+  await gravarOuMorrer(token)
+}
+
+/**
+ * Login por senha não existe mais em lugar nenhum; um erro genérico de
+ * argumento desconhecido não deixaria isso claro.
+ */
+if (modo === "--password") {
+  die("password_login_disabled", "Login por e-mail e senha foi descontinuado.", {
+    hint: "Gere um token no painel da Cloudez e rode cloudez-login sem argumento.",
+  })
+}
+
+if (modo) {
+  die("usage", `Argumento desconhecido: '${modo}'.`, {
+    hint:
+      "Uso: cloudez-login [--stdin]. Para saber se há token e como autenticar nesta " +
+      "máquina, chame a tool cloudez_auth_status — foi para lá que o antigo --check foi.",
+  })
+}
+
+const terminal = process.stdin.isTTY ? abrirTerminal() : null
+
+if (!terminal) {
+  // Caminho absoluto porque o usuário roda isto no terminal dele, fora da pasta da skill.
+  const self = fileURLToPath(import.meta.url)
+  die("no_tty", "cloudez-login exige um terminal interativo.", {
+    terminal_command: `node "${self}"`,
+    claude_code_command: `! node "${self}"`,
+    hint:
+      `Peça ao usuário para rodar no terminal dele: node "${self}". ` +
+      "No Claude Code, ele pode enviar o mesmo comando com ! na frente, que executa no terminal da sessão.",
+    reason:
+      "Um token digitado na conversa entra no contexto do modelo e no transcript. " +
+      "O prompt precisa rodar no terminal do usuário.",
+  })
+}
+
+const existente = await resolveToken()
+const existenteValido = Boolean(existente) && (await verifyToken(existente)) === "valid"
+
+process.stderr.write(
+  "\n  Login Cloudez\n" +
+    "  ───────────────────────────────────────────────\n" +
+    "  Gere um token no painel da Cloudez e cole abaixo.\n" +
+    `  O token vai para ${tokenFile()}, com permissão 0600.\n` +
+    "  Nada é digitado na tela.\n",
+)
+
+if (existenteValido) {
+  /**
+   * Rotacionar o token no painel é rotina; sem este aviso não haveria como
+   * trocar um token válido por outro sem apagar o arquivo na mão.
+   */
+  process.stderr.write("  Já existe um token válido aqui. Enter mantém o atual.\n")
+}
+process.stderr.write("  ───────────────────────────────────────────────\n\n")
+
+let digitado
+try {
+  digitado = (await pedirToken(terminal)).trim()
+} catch {
+  die("interrupted", "Login cancelado. Nada foi salvo.")
+}
+
+if (!digitado) {
+  if (!existenteValido) die("empty_token", "Nenhum token informado. Nada foi salvo.")
+  await statusJson("already_authenticated", true)
+}
+
+recusarSeNaoParecerToken(digitado, "O valor colado", "Cole apenas o token, sem o rótulo nem a URL do painel.")
+
+await gravarOuMorrer(digitado)

@@ -1,0 +1,4 @@
+cloudez:
+  production:
+    domain: meusite.com.br
+    root: ~/meusite.com.br/www/claude

@@ -1,0 +1,76 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    # A matriz nao e cerimonia. Os scripts em shell que restam rodam na maquina
+    # do desenvolvedor, que costuma ser macOS, e o servidor e Linux. As duas
+    # plataformas divergem em utilitarios que este projeto usa: `mv -T` (so no
+    # GNU coreutils) e o bash 3.2 que o macOS ainda traz, sem `mapfile`. Os dois
+    # ja quebraram aqui por so termos testado num lugar.
+    #
+    # Windows nao esta na matriz porque portar a suite bats para la exigiria bash e
+    # coreutils no runner. A cobertura daquela plataforma mora no job `windows`, que
+    # exercita o sync pelo Git Bash.
+    #
+    # A unica dependencia que sobra para instalar aqui e o shellcheck, e ele e de
+    # lint: a suite em si roda com o runtime que a skill ja exige. O jq saiu quando
+    # test/helpers/json.mjs assumiu a extracao de campo.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar dependências (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Instalar dependências (macOS)
+        if: runner.os == 'macOS'
+        run: brew install shellcheck
+
+      - name: Rodar a suíte
+        run: ./test/run.sh --strict
+
+  # Portar a suite bats para Windows significaria bash e coreutils no runner, muito
+  # trabalho para cobrir o que ja e verificado em duas outras plataformas. O que
+  # interessa aqui e o sync rodando naquela plataforma, e o hash batendo com o das
+  # outras duas.
+  windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 20 explicito, e nao o que o runner traz por acaso.
+      #
+      # 20 e o piso que a skill declara, e a diferenca importa exatamente aqui: um
+      # arquivo SEM EXTENSAO com sintaxe ESM e lido como CommonJS pelo Node 20, o
+      # que o `scripts/package.json` resolve, enquanto o Node 22+ detecta o modulo
+      # sozinho. Um runner moderno esconderia justamente o defeito que quebraria no
+      # piso, e ja escondeu uma vez.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # A skill chama os scripts como `node <skill>/scripts/cloudez-sync`, e o Git
+      # Bash e o shell que varias ferramentas usam para rodar comando no Windows.
+      #
+      # Este script tambem carrega a ANCORA DO HASH entre plataformas, que era o que
+      # o extinto `windows-build` verificava de mais valioso: o mesmo conteudo tem
+      # de dar o mesmo content_sha256 aqui e nas outras duas plataformas, senao dois
+      # deploys do mesmo conteudo viram releases diferentes.
+      #
+      # `shell: bash` no runner Windows e exatamente esse Git Bash — o mesmo
+      # ambiente do usuario, nao uma aproximacao.
+      - name: Sync sob Git Bash
+        shell: bash
+        run: ./test/windows/sync-git-bash.sh

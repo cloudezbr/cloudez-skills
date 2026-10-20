@@ -1,0 +1,8 @@
+test/bats/
+.cloudez/
+.DS_Store
+.claude/*
+.agents/*
+skills-lock.json
+CLAUDE.md
+cloudez-workspace/

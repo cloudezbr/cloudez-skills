@@ -1,0 +1,151 @@
+#!/usr/bin/env node
+/**
+ * Uso: cloudez-sync <deploy_id> <diretorio_local>
+ *      cloudez-sync --hash-only <diretorio_local>
+ *
+ * Envia o build para o diretório de release criado pelo cloudez_begin_deploy.
+ *
+ * Já foi um binário em Go, e antes disso o launcher POSIX que escolhia o
+ * binário da plataforma; os dois saíram quando Node 20+ virou pré-requisito
+ * do plugin, eliminando 15 MB de binários versionados.
+ *
+ * A skill chama este arquivo como `node <skill>/scripts/cloudez-sync`, e não
+ * pelo nome: fora do Claude Code nada põe esta pasta no PATH, e no Windows o
+ * shebang não vale nada.
+ */
+
+import { readdirSync, statSync } from "node:fs"
+
+/**
+ * Bundle de biblioteca, não o servidor: importar o servidor do cloudez-mcp
+ * subiria um transporte stdio e penduraria este processo.
+ */
+import { loadState, saveState } from "./lib/cloudez-state.mjs"
+
+import { die, ok } from "./_out.mjs"
+import { hashPayload } from "./_payload.mjs"
+import { transferir } from "./_transfer.mjs"
+
+const args = process.argv.slice(2)
+
+if (args.length < 2) {
+  /**
+   * Uso em texto puro, não no envelope JSON: erro de linha de comando ainda
+   * não tem contrato estabelecido para ler.
+   */
+  process.stderr.write("uso: cloudez-sync <deploy_id> <diretorio_local>\n")
+  process.stderr.write("     cloudez-sync --hash-only <diretorio_local>\n")
+  process.exit(2)
+}
+
+/**
+ * Roda antes do begin_deploy, formando o release_id que ainda não existe;
+ * não toca rede nem estado, só lê o diretório e imprime o resumo.
+ */
+if (args[0] === "--hash-only") {
+  apenasHash(args[1])
+} else {
+  await sincronizar(args[0], args[1])
+}
+
+/**
+ * As duas recusas sobre o diretório publicado, aplicadas nos dois modos:
+ * hashear um diretório vazio devolveria um sha válido para conteúdo nenhum.
+ */
+function conferirDiretorio(dir) {
+  let info = null
+  try {
+    info = statSync(dir)
+  } catch {
+    info = null
+  }
+  if (!info || !info.isDirectory()) {
+    die("build_output_missing", `Diretório '${dir}' não existe. O build rodou?`)
+  }
+
+  let entradas = []
+  try {
+    entradas = readdirSync(dir)
+  } catch {
+    entradas = []
+  }
+  if (entradas.length === 0) {
+    die("build_output_empty", `Diretório '${dir}' está vazio.`)
+  }
+}
+
+// Imprime o identificador de conteúdo do que seria enviado.
+function apenasHash(dir) {
+  conferirDiretorio(dir)
+
+  let h
+  try {
+    h = hashPayload(dir)
+  } catch (e) {
+    /**
+     * Nome que o transporte não sabe carregar é recusa própria, não falha de
+     * leitura: dizer `hash_failed` mandaria procurar defeito de disco.
+     */
+    if (e.code === "filename_unsupported") die("filename_unsupported", e.message)
+    die("hash_failed", `Não foi possível ler '${dir}' por inteiro: ${e.message}`)
+  }
+
+  /**
+   * conferirDiretorio só garante que o diretório não está vazio; um dir só
+   * com .git ou com um .gitignore amplo demais chega aqui com zero arquivos.
+   */
+  if (h.files === 0) {
+    const fontes = h.ignored?.sources ?? []
+    const porque = fontes.length > 0
+      ? `os padrões de ${fontes.join(" e ")} excluíram tudo`
+      : "só há `.git`, que o deploy sempre exclui"
+    die("build_output_empty", `Diretório '${dir}' não tem nenhum arquivo publicável: ${porque}.`)
+  }
+
+  ok(h)
+}
+
+async function sincronizar(deployId, dir) {
+  let dep
+  try {
+    dep = loadState(deployId)
+  } catch (e) {
+    /**
+     * loadState levanta o erro do MCP (ToolError), já no formato do
+     * contrato; reaproveitar a mensagem evita as duas pontas divergirem.
+     */
+    const doMcp = e?.body?.error?.message
+    die("deploy_not_found", doMcp ?? `deploy_id '${deployId}' desconhecido. Chame cloudez_begin_deploy primeiro.`)
+  }
+
+  conferirDiretorio(dir)
+
+  let resultado
+  try {
+    resultado = await transferir(dep, dir)
+  } catch (e) {
+    // As duas recusas acontecem antes de o tar existir: nada foi enviado.
+    if (e.code === "filename_unsupported") die("filename_unsupported", e.message)
+    if (e.code === "build_output_empty") die("build_output_empty", e.message)
+    throw e
+  }
+  const { stats, logs, erro } = resultado
+  if (erro) {
+    /**
+     * retryable porque a causa mais comum é rede ou chave recém-autorizada;
+     * o estado só avança quando o transporte confirma.
+     */
+    die("transfer_failed", `Falha ao enviar '${dir}' para ${dep.ssh.host}.`, { logs, retryable: true })
+  }
+
+  dep.status = "uploaded"
+  dep.transfer_stats = stats
+
+  try {
+    saveState(dep)
+  } catch (e) {
+    die("state_write_failed", e.message)
+  }
+
+  ok(dep)
+}
