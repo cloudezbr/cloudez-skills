@@ -28,6 +28,12 @@ const PROIBIDOS = [
   "commands/",
 ]
 
+/**
+ * O comando que registra o MCP nos agentes. Sem o `@latest`, o `npx` fica na
+ * versão do cache e o cliente para de receber atualização do MCP.
+ */
+const PACOTE_MCP = "@cloudez/cloudez-mcp@latest"
+
 const markdowns = () => [join(SKILL, "SKILL.md"), ...referencias().map((f) => join(SKILL, "references", f))]
 const referencias = () => readdirSync(join(SKILL, "references")).filter((f) => f.endsWith(".md"))
 const rel = (f) => relative(raiz, f).split("\\").join("/")
@@ -145,6 +151,35 @@ const checagens = {
           for (const termo of PROIBIDOS) if (linha.includes(termo)) problemas.push(`${rel(arquivo)}:${i + 1} contém '${termo}'`)
         })
     }
+    return problemas
+  },
+
+  // Um nome de pacote diferente num lugar só registra um MCP que não existe, ou um sem atualização.
+  pacote() {
+    const problemas = []
+    const arquivos = [...markdowns(), join(raiz, "README.md")]
+    let achados = 0
+    for (const arquivo of arquivos) {
+      const texto = readFileSync(arquivo, "utf8")
+      for (const m of texto.matchAll(/npx\s+-y\s+([^\s"'`]+)|"-y",\s*"([^"]+)"/g)) {
+        achados++
+        const pacote = m[1] ?? m[2]
+        if (pacote !== PACOTE_MCP) problemas.push(`${rel(arquivo)} registra '${pacote}', deveria ser '${PACOTE_MCP}'`)
+      }
+
+      // Os links de um clique levam o pacote codificado: base64 no Cursor, URL duas vezes no VS Code.
+      for (const m of texto.matchAll(/cursor\.com\/link\/mcp\/install\?name=\w+&config=([^)\s]+)/g)) {
+        achados++
+        const config = Buffer.from(m[1], "base64").toString("utf8")
+        if (!config.includes(`"${PACOTE_MCP}"`)) problemas.push(`${rel(arquivo)}: o link do Cursor registra ${config}`)
+      }
+      for (const m of texto.matchAll(/vscode\.dev\/redirect\?url=([^)\s]+)/g)) {
+        achados++
+        const config = decodeURIComponent(decodeURIComponent(m[1]))
+        if (!config.includes(`"${PACOTE_MCP}"`)) problemas.push(`${rel(arquivo)}: o link do VS Code registra ${config}`)
+      }
+    }
+    if (achados === 0) problemas.push(`nenhum registro de '${PACOTE_MCP}' encontrado no README nem na skill`)
     return problemas
   },
 

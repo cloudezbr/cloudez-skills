@@ -41,6 +41,12 @@ checa() {
   checa vocabulario
 }
 
+# A skill registra o MCP sozinha e o README ensina o registro manual: os dois
+# precisam apontar para o mesmo pacote, com o @latest que mantem o MCP atualizado.
+@test "skill: todo registro do MCP usa o mesmo pacote, com @latest" {
+  checa pacote
+}
+
 # O menu do `npx skills add` mostra um item por SKILL.md encontrado no repositorio.
 @test "skill: o unico SKILL.md do repositorio e o da skill cloudez" {
   git -C "$REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1 || skip "nao e um repositorio git"
