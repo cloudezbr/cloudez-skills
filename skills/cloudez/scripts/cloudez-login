@@ -175,10 +175,9 @@ if (!terminal) {
   const self = fileURLToPath(import.meta.url)
   die("no_tty", "cloudez-login exige um terminal interativo.", {
     terminal_command: `node "${self}"`,
-    claude_code_command: `! node "${self}"`,
     hint:
       `Peça ao usuário para rodar no terminal dele: node "${self}". ` +
-      "No Claude Code, ele pode enviar o mesmo comando com ! na frente, que executa no terminal da sessão.",
+      "Se o agente tiver um jeito de o usuário rodar comandos no terminal da sessão, serve também.",
     reason:
       "Um token digitado na conversa entra no contexto do modelo e no transcript. " +
       "O prompt precisa rodar no terminal do usuário.",

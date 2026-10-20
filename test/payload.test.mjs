@@ -244,7 +244,7 @@ test("o hash de uma árvore conhecida não mudou", () => {
   assert.equal(h.content_sha256, esperado, "o formato do hash mudou — releases já publicadas mudariam de id")
 })
 
-// O prefixo de 7 dígitos é o que vira sufixo do release_id (ver commands/deploy.md).
+// O prefixo de 7 dígitos é o que vira sufixo do release_id (ver references/deploy.md).
 test("os 7 primeiros dígitos servem de sufixo do release_id", () => {
   const dir = escrever({ "a.txt": "um" })
   const h = hashPayload(dir)

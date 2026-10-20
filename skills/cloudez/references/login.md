@@ -285,18 +285,12 @@ caminho absoluto já trocado:
 node "<caminho absoluto da skill>/scripts/cloudez-login"
 ```
 
-No Claude Code, peça para ele **enviar como mensagem** com `!` na frente, que
-executa no terminal da sessão, onde existe TTY:
-
-```
-! node "<caminho absoluto da skill>/scripts/cloudez-login"
-```
+Se o agente oferece ao usuário um jeito de rodar um comando no terminal da
+própria sessão, onde existe TTY, diga qual é: poupa a troca de janela.
 
 Não tente o modo interativo pelo seu shell: ali não há terminal de controle, e o
 script responde `no_tty`. Se você já recebeu esse erro, ele traz
-`terminal_command` e `claude_code_command` com o caminho absoluto montado;
-repasse esses campos. O mesmo vale para `login_command` e `claude_code_command`
-no `cloudez_auth_status`, quando vierem.
+`terminal_command` com o caminho absoluto montado; repasse esse comando.
 
 O `hint` do `cloudez_auth_status` pode dizer só "rode cloudez-login no terminal".
 Não repasse o nome puro: ele não está no PATH de ninguém. Mostre sempre o comando
@@ -331,4 +325,4 @@ então não é preciso reiniciar nada. Se continuar falhando:
   Errado, expirado ou revogado: ele gera outro na mesma página do passo 1. Você
   não resolve isso;
 - `authenticated: false` com `source: none` — nada foi salvo. Vale conferir se
-  ele rodou o comando (no Claude Code, com o `!`) e se terminou sem erro.
+  ele rodou o comando e se terminou sem erro.
