@@ -107,16 +107,15 @@ setup() {
   [ ! -f "$CLOUDEZ_TOKEN_FILE" ]
 }
 
-# O erro sem TTY precisa ensinar o caminho, e dentro do Claude Code o caminho e o
-# `!` — pela tool Bash nao existe terminal de controle nenhum.
-# O caminho vem absoluto e com `node` na frente: a pasta da skill nao esta no PATH
-# do terminal do usuario, e e la que o comando roda.
-@test "o erro sem TTY traz o comando do terminal e o ! do Claude Code" {
+# O erro sem TTY precisa ensinar o caminho: o agente roda comandos sem terminal de
+# controle, entao quem digita o token e o usuario, no terminal dele. O caminho vem
+# absoluto e com `node` na frente: a pasta da skill nao esta no PATH do terminal
+# do usuario, e e la que o comando roda.
+@test "o erro sem TTY traz o comando pronto para o terminal do usuario" {
   rm "$CLOUDEZ_TOKEN_FILE"
   run bash -c 'cloudez-login < /dev/null'
   [[ "$(campo "$output" .error.terminal_command)" == 'node "/'*'/cloudez-login"' ]]
-  [[ "$(campo "$output" .error.claude_code_command)" == '! node "/'*'/cloudez-login"' ]]
-  [[ "$(campo "$output" .error.hint)" == *"! "* ]]
+  [[ "$(campo "$output" .error.hint)" == *'node "/'*'/cloudez-login"'* ]]
 }
 
 # A lapide do --check saiu; o erro generico virou o unico caminho de volta ate a
@@ -261,25 +260,25 @@ setup() {
 # na maquina de quem tem Node novo. `--no-experimental-detect-module` desliga a
 # deteccao e reproduz o Node 20 em qualquer versao.
 @test "o login roda sem a deteccao de modulo, que e o piso Node 20" {
-  run bash -c 'printf tok_do_pipe | node --no-experimental-detect-module "$PLUGIN_ROOT/skills/cloudez/scripts/cloudez-login" --stdin'
+  run bash -c 'printf tok_do_pipe | node --no-experimental-detect-module "$REPO_ROOT/skills/cloudez/scripts/cloudez-login" --stdin'
   [ "$status" -eq 0 ]
   [ "$(campo "$output" .status)" = "authenticated" ]
 }
 
 @test "o setup tambem roda sem a deteccao de modulo" {
   rm .cloudez.yaml
-  run bash -c 'node --no-experimental-detect-module "$PLUGIN_ROOT/skills/cloudez/scripts/cloudez-setup" novo.example.com staging'
+  run bash -c 'node --no-experimental-detect-module "$REPO_ROOT/skills/cloudez/scripts/cloudez-setup" novo.example.com staging'
   [ "$status" -eq 0 ]
   [ "$(campo "$output" .status)" = "created" ]
 }
 
 @test "o scripts/package.json existe e so declara o tipo do modulo" {
-  [ "$(campo_de "$PLUGIN_ROOT/skills/cloudez/scripts/package.json" .type)" = "module" ]
+  [ "$(campo_de "$REPO_ROOT/skills/cloudez/scripts/package.json" .type)" = "module" ]
   # Um package.json com dependencias em scripts/ transformaria a skill em algo que
   # precisa de npm install — exatamente o que o bundle vendorado evita.
   #
   # Campo ausente sai como "null", que e o que se afirma aqui. Antes era um
   # `has("dependencies")` do jq; a diferenca so apareceria num package.json com
   # `"dependencies": null` escrito a mao, que nao e um estado que alguem produz.
-  [ "$(campo_de "$PLUGIN_ROOT/skills/cloudez/scripts/package.json" .dependencies)" = "null" ]
+  [ "$(campo_de "$REPO_ROOT/skills/cloudez/scripts/package.json" .dependencies)" = "null" ]
 }

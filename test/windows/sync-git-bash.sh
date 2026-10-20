@@ -2,8 +2,8 @@
 # O `cloudez-sync` da skill chamado de dentro de um bash NO WINDOWS.
 #
 # A skill chama os scripts como `node <skill>/scripts/cloudez-sync`, e é assim
-# que este teste chama: o Git Bash é o shell que várias ferramentas, inclusive o
-# Claude Code, usam para rodar comando no Windows.
+# que este teste chama: o Git Bash é o shell que vários agentes usam para rodar
+# comando no Windows.
 #
 # Verifica duas coisas: o arquivo sem extensão é lido como ESM no Node 20 (é o
 # `scripts/package.json` que garante), e o hash sai igual ao das outras

@@ -57,7 +57,7 @@ setup() { make_project; }
 
 # Config publicada ANTES desta mudanca tem `root:`. Ela nao e migrada — as tools o
 # aceitam e ele vence o derivado, e reescrever o arquivo de alguem para tirar uma
-# linha mexeria no valor mais destrutivo do plugin sem ninguem ter pedido.
+# linha mexeria no valor mais destrutivo do .cloudez.yaml sem ninguem ter pedido.
 @test "config antiga com root nao e tocada" {
   cat > .cloudez.yaml <<'YAML'
 cloudez:
@@ -333,7 +333,7 @@ setup_keys() {
 # $( ), o JSON de erro era capturado na variavel e nunca chegava ao usuario.
 # --------------------------------------------------------------- hash-only ---
 #
-# O passo que forma o release_id sem depender de git (commands/deploy.md, 4c). Roda
+# O passo que forma o release_id sem depender de git (references/deploy.md, 4c). Roda
 # ANTES do begin_deploy, entao nao tem deploy_id para receber: quem o chama esta
 # justamente montando o identificador que ainda nao existe.
 #
@@ -594,7 +594,7 @@ real_tar() { PATH=/usr/bin:/bin tar "$@"; }
     node -e '
       import(process.argv[1]).then((m) => {
         process.stdout.write(m.listarPayload("ctx").entries.map((e) => e.rel).join("\n") + "\n")
-      })' "$PLUGIN_ROOT/skills/cloudez/scripts/_payload.mjs"
+      })' "$REPO_ROOT/skills/cloudez/scripts/_payload.mjs"
   }
   listagem=$(listar | real_tar -czf - -C ctx -T - | real_tar -tzf -)
 
@@ -701,7 +701,7 @@ real_tar() { PATH=/usr/bin:/bin tar "$@"; }
 # ainda resolveria, e foi por isso que o bug passou pela suite — o fixture
 # padrao usa /srv/staging.
 # `current` pode ser um diretorio de verdade — o site que ja estava no ar antes
-# do plugin. `mv -T` de um link sobre um diretorio nao substitui, entao sem
+# do primeiro deploy. `mv -T` de um link sobre um diretorio nao substitui, entao sem
 # tratar isso o primeiro deploy morre em activation_failed sem dizer o motivo.
 #
 # O mock de ssh nao executa o comando remoto (mv -T e GNU, nao roda no macOS do

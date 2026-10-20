@@ -90,9 +90,9 @@ sem_node_modules() {
 # estagia os modificados e nao os novos, e o cloudez-sync morria no import com a
 # suite verde.
 @test "todo import relativo aponta para arquivo rastreado pelo git" {
-  git -C "$PLUGIN_ROOT" rev-parse --git-dir >/dev/null 2>&1 || skip "nao e um repositorio git"
+  git -C "$REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1 || skip "nao e um repositorio git"
 
-  run node "$PLUGIN_ROOT/test/helpers/imports.mjs" "$PLUGIN_ROOT"
+  run node "$REPO_ROOT/test/helpers/imports.mjs" "$REPO_ROOT"
   [ "$status" -eq 0 ] || {
     echo "$output"
     false

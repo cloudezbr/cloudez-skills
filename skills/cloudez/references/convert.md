@@ -86,7 +86,9 @@ servidor: um `ssh_failed` logo depois disso é esse atraso.
 ## 5. O projeto tem o código do site?
 
 Olhe o diretório do projeto. Se ele só tem `.cloudez.yaml`, `.git`, `.gitignore`,
-`.claude` ou `.DS_Store`, o usuário não tem o código na máquina, e o caminho é
+`.DS_Store`, `skills-lock.json` e pastas de agente ou editor (`.agents`,
+`.claude`, `.codex`, `.cursor`, `.gemini`, `.windsurf`, `.vscode`, `.idea`), o
+usuário não tem o código na máquina, e o caminho é
 baixar o site do servidor. Isso vale para `wordpress` e `html`; para outro tipo,
 diga que o download não cobre aquele tipo e peça o código ao usuário.
 

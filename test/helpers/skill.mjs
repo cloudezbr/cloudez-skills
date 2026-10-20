@@ -1,6 +1,6 @@
 /**
  * Confere a estrutura da skill: frontmatter, links entre referências, scripts
- * citados e vocabulário que só existia no plugin do Claude Code.
+ * citados e vocabulário que só funciona num agente específico.
  *
  * Uso: node test/helpers/skill.mjs <raiz> <checagem>
  * Imprime uma linha por problema e sai com 1. Silêncio e 0 é sucesso.
@@ -14,7 +14,7 @@ const raiz = resolve(process.argv[2] ?? ".")
 const checagem = process.argv[3]
 const SKILL = join(raiz, "skills", "cloudez")
 
-// Restos do plugin: cada um só funciona no Claude Code, ou aponta para um layout que não existe mais.
+// Cada um só funciona no Claude Code, ou aponta para um layout que não existe mais.
 const PROIBIDOS = [
   "/cloudez:",
   "AskUserQuestion",

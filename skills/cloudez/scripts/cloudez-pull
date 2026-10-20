@@ -19,14 +19,20 @@ import { loadPullState } from "./lib/cloudez-state.mjs"
 import { die, ok } from "./_out.mjs"
 import { baixar, receber } from "./_transfer.mjs"
 
-// O que o setup, o git, o agente e a instalação da skill deixam num projeto que ainda não tem código.
+// O que o setup, o git, o agente, o editor e a instalação da skill deixam num projeto que ainda não tem código.
 const PERMITIDOS = new Set([
   ".cloudez.yaml",
   ".cloudez.yml",
   ".git",
   ".gitignore",
-  ".claude",
   ".agents",
+  ".claude",
+  ".codex",
+  ".cursor",
+  ".gemini",
+  ".windsurf",
+  ".vscode",
+  ".idea",
   "skills-lock.json",
   ".DS_Store",
 ])

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Helpers compartilhados pelos arquivos .bats.
 
-PLUGIN_ROOT="$(cd "$(dirname "${BATS_TEST_FILENAME}")/.." && pwd)"
-export PLUGIN_ROOT
+REPO_ROOT="$(cd "$(dirname "${BATS_TEST_FILENAME}")/.." && pwd)"
+export REPO_ROOT
 
 # Os mocks vem ANTES de tudo: nenhum teste toca rede, SSH ou servidor.
-export PATH="$PLUGIN_ROOT/test/mocks:$PLUGIN_ROOT/skills/cloudez/scripts:$PATH"
+export PATH="$REPO_ROOT/test/mocks:$REPO_ROOT/skills/cloudez/scripts:$PATH"
 
 # make_project: projeto git temporario com config valida, ja commitado.
 make_project() {
@@ -60,10 +60,10 @@ teardown() {
 }
 
 # campo <json> <caminho>: extrai um campo, no formato do `jq -r`.
-campo() { printf '%s' "$1" | node "$PLUGIN_ROOT/test/helpers/json.mjs" "$2"; }
+campo() { printf '%s' "$1" | node "$REPO_ROOT/test/helpers/json.mjs" "$2"; }
 
 # campo_de <arquivo> <caminho>: o mesmo, lendo de um arquivo.
-campo_de() { node "$PLUGIN_ROOT/test/helpers/json.mjs" "$2" < "$1"; }
+campo_de() { node "$REPO_ROOT/test/helpers/json.mjs" "$2" < "$1"; }
 
 # com_pty <bytes> <comando...>: roda o comando num terminal de verdade e
 # "digita" os bytes quando o prompt aparecer.
@@ -129,7 +129,7 @@ com_pty() {
 campo_pty() {
   printf '%s\n' "$1" \
     | awk '/^\{$/ { buf = "" } { buf = buf $0 "\n" } END { printf "%s", buf }' \
-    | node "$PLUGIN_ROOT/test/helpers/json.mjs" "$2"
+    | node "$REPO_ROOT/test/helpers/json.mjs" "$2"
 }
 
 # API da Cloudez: sobe um servidor real em porta efemera, ja que o
@@ -142,7 +142,7 @@ start_api() {
   mkdir -p "$API_CONTROL"
   export API_CONTROL
 
-  node "$PLUGIN_ROOT/test/mocks/api-server.mjs" "$API_CONTROL" &
+  node "$REPO_ROOT/test/mocks/api-server.mjs" "$API_CONTROL" &
   API_PID=$!
   export API_PID
 

@@ -167,7 +167,15 @@ services:
 
 ```
 .git
+.agents
 .claude
+.codex
+.cursor
+.gemini
+.windsurf
+.vscode
+.idea
+skills-lock.json
 .cloudez
 .cloudez.env
 .cloudez.yaml

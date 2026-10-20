@@ -31,8 +31,9 @@ todas.
   domínio de uma revenda, e é esse que se mostra ao usuário.
 - **Cloud**: o servidor contratado. Uma conta tem uma ou mais.
 - **Site**: um domínio hospedado numa cloud. Só um site do tipo **Claude**
-  recebe deploy por esta skill; os de outro tipo (WordPress, html) passam antes
-  pela conversão.
+  (`claude` na API) recebe deploy por esta skill; os de outro tipo (WordPress,
+  html) passam antes pela conversão. "Claude" é só o nome desse tipo de site na
+  Cloudez: vale para qualquer agente e qualquer modelo, e não exige o Claude.
 - **Environment**: uma chave dentro de `cloudez:` no `.cloudez.yaml` do projeto
   (`staging`, `production`...), cada uma apontando para um site.
 - **Release**: um diretório em `<root>/releases/<release_id>` no servidor. O
@@ -50,11 +51,24 @@ todas.
 ## Antes de qualquer operação
 
 1. **O MCP está presente?** Se nenhuma tool `cloudez_*` estiver disponível,
-   pare. Diga em uma frase que falta o servidor da Cloudez no agente e mostre a
-   seção de configuração do README desta skill
-   (<https://github.com/cloudezbr/cloudez-skill#configuração>). Não tente
-   chegar à API por outro caminho: sem o MCP, nenhuma operação tem como
-   terminar, e uma tentativa no escuro só adia a mesma resposta.
+   pare. Não tente chegar à API por outro caminho: sem o MCP, nenhuma operação
+   tem como terminar, e uma tentativa no escuro só adia a mesma resposta. Diga
+   ao usuário, em poucas linhas, que o servidor da Cloudez não está disponível
+   nesta sessão, e cubra as duas causas, porque daqui elas parecem iguais:
+   - **não registrado:** o registro está na seção de configuração do README
+     (<https://github.com/cloudezbr/cloudez-skills#configuração>);
+   - **registrado, mas não iniciou:** reconectar o servidor pelo agente ou
+     abrir uma sessão nova, e conferir que o Node é 20 ou mais novo.
+
+   Se o agente informou a causa (por exemplo, uma falha de conexão), fale só
+   dela. E avise que, depois de registrar, a maioria dos agentes só carrega o
+   servidor numa sessão nova: sem esse aviso, o usuário registra, tenta de novo
+   na mesma conversa e recebe a mesma resposta.
+
+   Se o MCP parar de responder **no meio** de uma operação, pare ali também e
+   diga em que passo parou. No deploy, enquanto a release não foi ativada, o
+   site continua na versão anterior; diga isso, para o usuário saber que nada
+   saiu do ar.
 2. **Autenticação.** Chame `cloudez_auth_status`. Com `authenticated: false`,
    siga [login.md](references/login.md) e só depois volte à operação pedida.
    Fica aqui, e não em cada procedimento, porque quem chega em linguagem natural
@@ -126,9 +140,9 @@ terminal, o script falha com `no_tty`, e o erro já traz o comando pronto, com o
 caminho absoluto.
 
 Quando ele for necessário: explique em uma frase o que ele faz, mostre o comando
-exato, espere o usuário dizer que rodou e confira com `cloudez_auth_status`. No
-Claude Code, o usuário pode enviar o comando com `!` na frente, que executa no
-terminal da sessão. O caminho preferido, que dispensa isto, é o do clipboard em
+exato, espere o usuário dizer que rodou e confira com `cloudez_auth_status`. Se
+o agente oferece ao usuário um jeito de rodar um comando no terminal da própria
+sessão, diga qual é. O caminho preferido, que dispensa isto, é o do clipboard em
 [login.md](references/login.md).
 
 ## Regras de execução

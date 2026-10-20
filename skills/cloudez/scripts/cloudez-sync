@@ -6,12 +6,11 @@
  * Envia o build para o diretório de release criado pelo cloudez_begin_deploy.
  *
  * Já foi um binário em Go, e antes disso o launcher POSIX que escolhia o
- * binário da plataforma; os dois saíram quando Node 20+ virou pré-requisito
- * do plugin, eliminando 15 MB de binários versionados.
+ * binário da plataforma; os dois saíram quando Node 20+ virou pré-requisito,
+ * eliminando 15 MB de binários versionados.
  *
  * A skill chama este arquivo como `node <skill>/scripts/cloudez-sync`, e não
- * pelo nome: fora do Claude Code nada põe esta pasta no PATH, e no Windows o
- * shebang não vale nada.
+ * pelo nome: nada põe esta pasta no PATH, e no Windows o shebang não vale nada.
  */
 
 import { readdirSync, statSync } from "node:fs"

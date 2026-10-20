@@ -1,4 +1,4 @@
-# Cloudez Skill
+# Cloudez Skills
 
 Skill de agente para desenvolver, publicar e reverter sites na hospedagem Cloudez, em qualquer agente compatível com Agent Skills (Claude Code, Codex, Cursor, OpenCode e outros).
 
@@ -35,7 +35,7 @@ Nos demais agentes, adicione um servidor MCP `cloudez` com o comando `npx -y clo
 ## Instalação e execução
 
 ```bash
-npx skills add cloudezbr/cloudez-skill -g   # escolha os agentes no menu
+npx skills add cloudezbr/cloudez-skills -g   # escolha os agentes no menu
 ```
 
 Instale com `-g` (no usuário): instalada dentro do projeto, a pasta da skill iria para o servidor junto com o site no deploy. Depois, peça ao agente em linguagem natural, por exemplo "publica meu site na Cloudez" ou "volta o site para a versão anterior".

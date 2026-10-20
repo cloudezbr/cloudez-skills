@@ -30,7 +30,7 @@ setup() {
 # ------------------------------------------------------------------ o harness --
 #
 # O `com_pty` deixou de ser detalhe de teste e virou peça carregada: sete testes
-# dependem dele para afirmar sobre falha. Este verifica o HARNESS, não o plugin.
+# dependem dele para afirmar sobre falha. Este verifica o HARNESS, não os scripts.
 #
 # Existe por um defeito real: o `script` do util-linux devolve o próprio código de
 # saída, e não o do filho, a menos que receba `-e`. Sem essa flag toda afirmação de
@@ -51,7 +51,7 @@ setup() {
 # ------------------------------------------------------------------ o básico --
 
 @test "o prompt le o token digitado e o grava" {
-  run com_pty $'tok_do_prompt\n' node "$PLUGIN_ROOT/skills/cloudez/scripts/cloudez-login"
+  run com_pty $'tok_do_prompt\n' node "$REPO_ROOT/skills/cloudez/scripts/cloudez-login"
   [ "$status" -eq 0 ]
   [ "$(campo_pty "$output" .status)" = "authenticated" ]
   [ "$(campo_pty "$output" .verified)" = "true" ]
@@ -61,7 +61,7 @@ setup() {
 # A razão de o prompt existir em vez de um `read` comum. Um segredo ecoado fica no
 # scrollback do terminal e, com frequência, no log de quem grava a sessão.
 @test "o que se digita nao aparece na tela" {
-  run com_pty $'tok_ultrasecreto\n' node "$PLUGIN_ROOT/skills/cloudez/scripts/cloudez-login"
+  run com_pty $'tok_ultrasecreto\n' node "$REPO_ROOT/skills/cloudez/scripts/cloudez-login"
   [ "$status" -eq 0 ]
   # Na saída do TERMINAL — que é o que o `com_pty` devolve — o token não pode
   # estar em lugar nenhum. No arquivo, tem de estar.
@@ -79,7 +79,7 @@ setup() {
 
 @test "backspace corrige o que ja foi digitado" {
   # tok_ERRXX, dois backspaces, OK  ->  tok_ERROK
-  run com_pty $'tok_ERRXX\177\177OK\n' node "$PLUGIN_ROOT/skills/cloudez/scripts/cloudez-login"
+  run com_pty $'tok_ERRXX\177\177OK\n' node "$REPO_ROOT/skills/cloudez/scripts/cloudez-login"
   [ "$status" -eq 0 ]
   [ "$(cat "$CLOUDEZ_TOKEN_FILE")" = "tok_ERROK" ]
 }
@@ -88,7 +88,7 @@ setup() {
 # em modo raw depois que o usuário desiste.
 @test "Ctrl-C cancela o login sem gravar nada" {
   rm -f "$CLOUDEZ_TOKEN_FILE"
-  run com_pty $'tok_arrependido\003' node "$PLUGIN_ROOT/skills/cloudez/scripts/cloudez-login"
+  run com_pty $'tok_arrependido\003' node "$REPO_ROOT/skills/cloudez/scripts/cloudez-login"
   [ "$status" -eq 1 ]
   [ "$(campo_pty "$output" .error.code)" = "interrupted" ]
   [ ! -f "$CLOUDEZ_TOKEN_FILE" ]
@@ -101,7 +101,7 @@ setup() {
 # distingue "mantém o atual" de "não informei nada".
 @test "Enter vazio mantem o token valido que ja existia" {
   # make_project deixa um token no arquivo, e a API falsa responde 200 para ele.
-  run com_pty $'\n' node "$PLUGIN_ROOT/skills/cloudez/scripts/cloudez-login"
+  run com_pty $'\n' node "$REPO_ROOT/skills/cloudez/scripts/cloudez-login"
   [ "$status" -eq 0 ]
   [ "$(campo_pty "$output" .status)" = "already_authenticated" ]
   [ "$(cat "$CLOUDEZ_TOKEN_FILE")" = "tok_teste" ]
@@ -109,7 +109,7 @@ setup() {
 
 @test "Enter vazio sem token valido recusa, em vez de gravar vazio" {
   rm -f "$CLOUDEZ_TOKEN_FILE"
-  run com_pty $'\n' node "$PLUGIN_ROOT/skills/cloudez/scripts/cloudez-login"
+  run com_pty $'\n' node "$REPO_ROOT/skills/cloudez/scripts/cloudez-login"
   [ "$status" -eq 1 ]
   [ "$(campo_pty "$output" .error.code)" = "empty_token" ]
   [ ! -f "$CLOUDEZ_TOKEN_FILE" ]
@@ -122,7 +122,7 @@ setup() {
 # porque `--stdin` sem pipe travaria esperando entrada que nunca vem, e o usuario
 # nao teria como saber por que.
 @test "--stdin recusa quando stdin e um terminal, e nao um pipe" {
-  run com_pty '' node "$PLUGIN_ROOT/skills/cloudez/scripts/cloudez-login" --stdin
+  run com_pty '' node "$REPO_ROOT/skills/cloudez/scripts/cloudez-login" --stdin
   [ "$status" -eq 1 ]
   [ "$(campo_pty "$output" .error.code)" = "usage" ]
   [[ "$output" == *"num pipe"* ]]
@@ -134,7 +134,7 @@ setup() {
 # digitado é gravado ANTES de validar, e desfeito quando a Cloudez recusa.
 @test "token recusado pelo prompt devolve o anterior ao arquivo" {
   api_status 401
-  run com_pty $'tok_recusado\n' node "$PLUGIN_ROOT/skills/cloudez/scripts/cloudez-login"
+  run com_pty $'tok_recusado\n' node "$REPO_ROOT/skills/cloudez/scripts/cloudez-login"
   [ "$status" -eq 1 ]
   [ "$(campo_pty "$output" .error.code)" = "invalid_token" ]
   [ "$(cat "$CLOUDEZ_TOKEN_FILE")" = "tok_teste" ]

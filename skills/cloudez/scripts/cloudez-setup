@@ -10,7 +10,7 @@
  * Não exige token nem confirma que o domínio existe na conta: quem confirma
  * é a tool cloudez_get_site, chamada por /cloudez:setup antes de chegar
  * aqui. Rodado direto, este script escreve config para qualquer FQDN bem
- * formado, exista ou não: a ordem certa é garantida por commands/setup.md.
+ * formado, exista ou não: a ordem certa é garantida por references/setup.md.
  *
  * Continua fora do MCP porque escreve no projeto do usuário; ler a máquina
  * local não é motivo para isso, mas gravar nela é decisão de outra ordem.
