@@ -1,16 +1,13 @@
 ---
 name: cloudez
 description: >
-  Desenvolve, publica e mantém sites na hospedagem Cloudez: login e criação de
-  conta, contratação de cloud, ligação do projeto a um site, escrita do Docker
-  Compose, execução local, deploy com ativação atômica da release, conversão de
-  sites WordPress ou html para o tipo Claude e rollback para uma versão anterior.
-  Use sempre que o usuário mencionar a Cloudez, ou pedir para subir, publicar,
-  colocar no ar ou fazer deploy de um site, voltar uma versão, ver as releases,
-  containerizar o projeto ou criar o docker-compose para produção, mesmo sem
-  dizer "Cloudez", quando o projeto tiver um .cloudez.yaml. Não use para deploy
-  em outros provedores (Vercel, Netlify, AWS) nem para Docker sem relação com a
-  Cloudez.
+  Facilita a publicação, atualização e gerenciamento de sites na Cloudez,
+  desde a configuração inicial até o deploy, acompanhamento de versões e
+  restauração de versões anteriores. Também auxilia na preparação de projetos
+  para hospedagem e na conversão de sites existentes para o formato Claude.
+  Use sempre que o usuário mencionar a Cloudez ou precisar publicar, atualizar,
+  gerenciar ou restaurar um site hospedado na plataforma. Também use quando
+  o projeto contiver um arquivo .cloudez.yaml.
 license: MIT
 compatibility: Usa o servidor MCP @cloudez/cloudez-mcp (a skill o configura no primeiro uso), Node 20+, ssh e tar.
 metadata:
